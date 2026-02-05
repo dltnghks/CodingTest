@@ -1,60 +1,62 @@
 #include <iostream>
 #include <vector>
-#include <math.h>
-#include <stack>
+
+#define TRUE 1
+#define FALSE 0
+#define INF 1e9
 
 using namespace std;
 
+vector<int> populations;
+vector<vector<int>> graph;
 vector<vector<int>> dp;
-vector<int> p;
 
-void dfs(int cur, vector<vector<int>>& tree, vector<int>& population){
-    
-    dp[cur][true] = population[cur];
-    dp[cur][false] = 0;
+int solve(int cur, int parent, bool state){
 
-    for(int idx : tree[cur]){
-        if(p[cur] == idx) continue;
-        p[idx] = cur;
-        dfs(idx, tree, population);
-        dp[cur][true] += dp[idx][false];
-        dp[cur][false] += max(dp[idx][false], dp[idx][true]);
+    if(dp[cur][state] != INF) return dp[cur][state];
+
+    dp[cur][state] = (state == TRUE ?  populations[cur] : 0);
+
+    int sum = 0;
+    for(int val : graph[cur]){
+        if(val == parent) continue;
+        
+        int trueVal = solve(val, cur, TRUE);
+        int falseVal = solve(val, cur, FALSE);
+
+        if(state == TRUE){
+            sum += falseVal;
+        }else{
+            sum += max(trueVal, falseVal);
+        }
     }
+
+    dp[cur][state] += sum;
+
+    return dp[cur][state];
 }
 
 int main() {
-
-    ios::sync_with_stdio(0);
-    cin.tie(0);
-    
-    // 입력
+    ios_base::sync_with_stdio(false);
+    cin.tie(NULL);
+   
     int n;
     cin >> n;
-    // 인덱스를 맞춰주기 위해 +1
-    n++;
 
-    vector<int> populations(n);
-    for(int i = 1; i < n; i++){
+    populations = vector<int>(n+1, 0);
+    graph = vector<vector<int>>(n+1, vector<int>());
+    dp = vector<vector<int>>(n+1, vector<int>(2, INF));
+    for(int i = 1; i <= n; i++){
         cin >> populations[i];
     }
 
-    vector<vector<int>> tree(n, vector<int>());
-    for(int i = 1; i < n-1; i++){
-        int to, from;
-        cin >> to >> from;
-        tree[to].push_back(from);
-        tree[from].push_back(to);
+    for(int i = 0; i < n-1; i++){
+        int a, b;
+        cin >> a >> b;
+        graph[a].push_back(b);
+        graph[b].push_back(a);
     }
 
-    dp = vector<vector<int>>(n, vector<int>(2));
-    p = vector<int>(n);
-
-    // 로직
-    dfs(1, tree, populations);
-    int res = max(dp[1][true], dp[1][false]);
-    
-    // 결과
-    cout << res;
-
+    cout << max(solve(1, 0, TRUE), solve(1, 0, FALSE)) << '\n';
     return 0;
 }
